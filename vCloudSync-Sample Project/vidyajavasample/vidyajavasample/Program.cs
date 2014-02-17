@@ -82,7 +82,9 @@ namespace GCS
     {
       //  string client_Sec = "rMkXB6ZdyrYILKM9CE-KLqeb";
         string lauth_token;
-        public static UserCredential credential;
+     //   public static UserCredential credential;
+        public static string filePath = @"M:\winrar-x64-500.exe";
+        public static string objName = "winrar-x64-500.exe";
         public static Google.Apis.Storage.v1beta2.StorageService service;
         static void Main(string[] args)
         {
@@ -158,12 +160,14 @@ namespace GCS
                // insertMethod(lauth_token, "trov004");
 
 
-               //    getMethod(lauth_token, "sample_bucket001");
+                  // getMethod(lauth_token, "sample_bucket001");
 
-                //objectInsertMethod(lauth_token, "trov004", "vcloudobj");
-                objectGetMethod(lauth_token, "trov004", "myObj02.txt");
+              //  objectInsertMethod(lauth_token, "trov004", objName);
+             // objectMultipartInsertMethod(lauth_token, "trov004", objName);
+                objectGetMethod(lauth_token, "trov004", "Lighthouse.jpg");
+                
 
-                //listBucket(key);
+                listBucket(key);
 
 
                 Console.WriteLine("\n\nINSERT SUCCESSFULLY");
@@ -191,6 +195,8 @@ namespace GCS
                     Console.Write(ex.Message + "\n" + ex.StackTrace);
             }
         }
+
+
         private  long unix_timestamp()
         {
             TimeSpan unix_time = (System.DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc));
@@ -352,6 +358,14 @@ namespace GCS
 
             Console.WriteLine("Bucket metadata using get is : " + text);
 
+
+
+            //Storage.Buckets.Get getBucket = storage.buckets().get(settings.getBucket());
+            //getBucket.setProjection("full");
+            //Bucket bucket = getBucket.execute();
+            //GET https://www.googleapis.com/storage/v1beta2/b/trov004?projection=full&fields=location&key={YOUR_API_KEY}
+
+
         }
 
 
@@ -364,10 +378,10 @@ namespace GCS
                 urlBuilder.Append("www.googleapis.com");
                 urlBuilder.Append("/upload/storage/v1beta2/b/");
                 urlBuilder.Append(bucName);
-                urlBuilder.Append("/o?uploadType=media&name=Koala.jpg");
+                urlBuilder.Append("/o?uploadType=media&name=winrar-x64-500");
 
                 //string postData = "{\"name\":\"" + bucName + "\",\"location\":\"US\"}";
-                FileStream fStream = File.Open(@"M:\Koala.jpg", FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                FileStream fStream = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                 Console.WriteLine("File length is : " + fStream.Length);
                 Console.Read();
                 Encoding encoding = new UTF8Encoding();
@@ -382,7 +396,7 @@ namespace GCS
 
                 var httpWebRequest = HttpWebRequest.Create(urlBuilder.ToString()) as HttpWebRequest;
                 httpWebRequest.Headers.Add("Authorization", authToken);
-                httpWebRequest.ContentType = "application/jpeg";
+                httpWebRequest.ContentType = "application/x-www-form-urlencoded";
                 httpWebRequest.Method = "POST";
                 httpWebRequest.ContentLength = fStream.Length;
 
@@ -410,6 +424,68 @@ namespace GCS
             }
         }
 
+
+
+        private void objectMultipartInsertMethod(string lauth_token, string bucName, string objName)
+        {
+            try
+            {
+                var urlBuilder = new System.Text.StringBuilder();
+                urlBuilder.Append("https://");
+                urlBuilder.Append("www.googleapis.com");
+                urlBuilder.Append("/upload/storage/v1beta2/b/");
+                urlBuilder.Append(bucName);
+                urlBuilder.Append("/o?uploadType=multipart&");
+                urlBuilder.Append("name=" + objName);
+
+                //string postData = "{\"name\":\"" + bucName + "\",\"location\":\"US\"}";
+                FileStream fStream = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                Console.WriteLine("File length is : " + fStream.Length);
+                Console.Read();
+                Encoding encoding = new UTF8Encoding();
+                //byte[] buff = encoding.GetBytes(postData);
+                byte[] buff = new byte[fStream.Length];
+                fStream.Read(buff, 0, buff.Length);
+                fStream.Flush();
+                fStream.Position = 0;
+                Console.WriteLine("Url  :  " + urlBuilder.ToString());
+
+                string authToken = "Bearer " + lauth_token;
+
+                var httpWebRequest = HttpWebRequest.Create(urlBuilder.ToString()) as HttpWebRequest;
+                httpWebRequest.Headers.Add("Authorization", authToken);
+                httpWebRequest.ContentType = "multipart / related; boundary = \"foo_bar_baz\" ";
+                httpWebRequest.ContentLength = fStream.Length;
+                httpWebRequest.ContentType = "application/x-www-form-urlencoded";
+                httpWebRequest.Method = "POST";
+                httpWebRequest.ContentLength = fStream.Length;
+
+                Stream reqStream = httpWebRequest.GetRequestStream();
+                reqStream.Write(buff, 0, buff.Length);
+
+                var response = httpWebRequest.GetResponse();//.GetSafeResponse();
+
+                var responseText = response.GetResponseStream();//.GetResponseText();
+
+                StreamReader reader = new StreamReader(responseText);
+                string text = reader.ReadToEnd();
+                fStream.Close();
+                Console.WriteLine("obj inserted is : " + text);
+
+                Console.Read();
+            }
+            catch (WebException wex)
+            {
+                Console.WriteLine("\n\n\n Web Exception is : " + wex.Message + "\n" + wex.StackTrace);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("\n\n\n Exception is  :  " + ex.Message + "\n" + ex.StackTrace);
+            }
+        }
+
+
+
         private void objectGetMethod(string lauth_token, string bucName, string objName)
         {
             try
@@ -420,9 +496,8 @@ namespace GCS
                 urlBuilder.Append("/o/");
                 urlBuilder.Append(objName);
 
-                FileStream fStream = File.Open(@"M:\Koala000003.txt", FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                Encoding encoding = new UTF8Encoding();
-                byte[] buff = new byte[780831];
+                FileStream fStream = File.Open(@"M:\Lighthouse.jpg", FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                byte[] buff = new byte[561276];
 
                 string authToken = "Bearer " + lauth_token;
 
@@ -430,10 +505,6 @@ namespace GCS
                 httpWebRequest.Headers.Add("Authorization", authToken);
                 httpWebRequest.ContentType = "application/json";
                 httpWebRequest.Method = "GET";
-                //httpWebRequest.ContentLength = fStream.Length;
-
-                //Stream reqStream = httpWebRequest.GetRequestStream();
-                //reqStream.Write(buff, 0, buff.Length);
 
                 var response = httpWebRequest.GetResponse();//.GetSafeResponse();
 
@@ -442,32 +513,22 @@ namespace GCS
                 StreamReader reader = new StreamReader(responseText);
                 string text = reader.ReadToEnd();
                 Console.WriteLine("obj download file  is : " + text);
-                //fStream.Close();
 
                 string[] tokens = text.Split(':');
                 string mediaLine = "";
 
-                //for (int i = 0; i < tokens.Length; i++)
-                //{
-                //    if (tokens[i].Contains("mediaLink"))
-                //        mediaLine = (tokens[i]);
-                //    mediaLine = (mediaLine.Split(':')[0].Replace("\"", ""));
-                //}
                 for (int i = 0; i < tokens.Length; i++)
                 {
                     if (tokens[i].Contains("mediaLink"))
                         mediaLine = (tokens[i + 2].Split(',')[0].Replace("\"", ""));
                 }
                 Console.WriteLine("\n\n\n\nhttps:" + mediaLine);
-                Console.Read();
-                var httpWebRequest1 = HttpWebRequest.Create("https:" + mediaLine) as HttpWebRequest;
+                Thread.Sleep(1000);
+                //var httpWebRequest1 = HttpWebRequest.Create("https:" + mediaLine) as HttpWebRequest;
+                var httpWebRequest1 = HttpWebRequest.Create("http://storage.googleapis.com/trov004/Lighthouse.jpg") as HttpWebRequest;
                 httpWebRequest1.Headers.Add("Authorization", authToken);
-                httpWebRequest1.ContentType = "application/json";
+                httpWebRequest1.ContentType = "image/jpeg";
                 httpWebRequest1.Method = "GET";
-                //httpWebRequest.ContentLength = fStream.Length;
-
-                //Stream reqStream = httpWebRequest.GetRequestStream();
-                //reqStream.Write(buff, 0, buff.Length);
 
                 var response1 = httpWebRequest1.GetResponse();//.GetSafeResponse();
 
